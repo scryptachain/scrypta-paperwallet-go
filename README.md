@@ -30,3 +30,10 @@ Usage of ./scrypta-paperwallet-go:
 -amount int an int (default 1) 
 -genpdf true/false
 ```
+
+## Dependencies
+*  https://github.com/btcsuite/btcd/btcec
+*  https://github.com/btcsuite/btcd/chaincfg
+*  https://github.com/btcsuite/btcutil
+*  https://github.com/jung-kurt/gofpdf
+*  https://github.com/skip2/go-qrcode
