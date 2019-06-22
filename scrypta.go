@@ -5,6 +5,10 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
+	"log"
+	"os"
+	"time"
 
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/chaincfg"
@@ -65,13 +69,17 @@ func CreateAddress(amount int) (string, []Wallet) {
 
 	json := ConvertToJSON(&wallets)
 
+	log.Println("Generated", amount, "addresses")
+
 	return json, wallets
 
 }
 
 func main() {
 
-	amount := flag.Int("amount", 1, "an int")
+	initLog()
+
+	amount := flag.Int("amount", 1, "amount of lyra addresses to generate")
 	genpdf := flag.Bool("genpdf", false, "true/false")
 
 	flag.Parse()
@@ -81,7 +89,7 @@ func main() {
 	if *genpdf == true && *amount <= 10 {
 		GenPDF(wallets)
 	} else if *genpdf == true && *amount > 10 {
-		fmt.Println("PDFs Not generated (max addresses amount = 10)")
+		log.Println("PDFs Not generated (max addresses amount = 10)")
 	}
 
 	fmt.Println(json)
@@ -90,12 +98,12 @@ func main() {
 //GenPDF --> Create PDF File
 func GenPDF(wallets []Wallet) {
 
-	for index, wallet := range wallets {
+	for _, wallet := range wallets {
 
 		pdf := gofpdf.New("P", "mm", "A4", "")
 		pdf.AddPage()
 		pdf.SetFont("Arial", "B", 8)
-		pdf.Cell(15, 15, string(index)+wallet.ADDRESS+":"+wallet.PRIVKEY)
+		pdf.Cell(15, 15, wallet.ADDRESS+":"+wallet.PRIVKEY)
 
 		var png []byte
 		png, err2 := qrcode.Encode(wallet.ADDRESS+":"+wallet.PRIVKEY, qrcode.Medium, 256)
@@ -105,7 +113,7 @@ func GenPDF(wallets []Wallet) {
 
 		err := pdf.OutputFileAndClose(wallet.ADDRESS + ".pdf")
 		if err != nil && err2 != nil {
-			fmt.Println(err)
+			log.Fatalln(err)
 		}
 
 	}
@@ -116,4 +124,18 @@ func GenPDF(wallets []Wallet) {
 func ConvertToJSON(input interface{}) string {
 	btResult, _ := json.MarshalIndent(&input, "", "  ")
 	return string(btResult)
+}
+
+func initLog() {
+	var err error
+	//Creating logs folder if not exists
+	_ = os.Mkdir("logs", os.ModeDir)
+	//Set LogFile name and path
+	logFile, err := os.Create("logs/" + time.Now().Format("2006-01-02 15-04-05") + ".txt")
+	mw := io.MultiWriter(os.Stdout, logFile)
+	if err != nil {
+		fmt.Println(err)
+	}
+	//Update logger
+	log.SetOutput(mw)
 }
